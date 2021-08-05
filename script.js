@@ -80,18 +80,30 @@ const runComparison = () => {
         let righthandStat = righthand[index].dataset.value;
         if (righthandStat > lefthandStat) {
             leftStat.classList.remove("is-primary");
+            leftStat.classList.remove("is-link");
+            leftStat.classList.remove("is-success");
             leftStat.classList.add("is-danger");
             righthand[index].classList.remove("is-primary");
+            righthand[index].classList.remove("is-danger");
+            righthand[index].classList.remove("is-link");
             righthand[index].classList.add("is-success");
         } else if (righthandStat == lefthandStat) {
             leftStat.classList.remove("is-primary");
+            leftStat.classList.remove("is-danger");
+            leftStat.classList.remove("is-success");
             leftStat.classList.add("is-link");
             righthand[index].classList.remove("is-primary");
+            righthand[index].classList.remove("is-danger");
+            righthand[index].classList.remove("is-success");
             righthand[index].classList.add("is-link");
         } else {
             righthand[index].classList.remove("is-primary");
+            righthand[index].classList.remove("is-link");
+            righthand[index].classList.remove("is-success");
             righthand[index].classList.add("is-danger");
             leftStat.classList.remove("is-primary");
+            leftStat.classList.remove("is-link");
+            leftStat.classList.remove("is-danger");
             leftStat.classList.add("is-success");
         }
     })
@@ -116,7 +128,7 @@ const renderMovie = (movie) => {
                 return prev + value;
             }
         }, 0);
-        console.log(awards, ratings1, ratings2)
+        console.log(imdbVotes)
         return `
         <div class="card">
         <article class="media">
