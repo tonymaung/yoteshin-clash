@@ -23,6 +23,9 @@ const fetchData = async(searchTerm) => {
         params: {
             apikey: '8c682b5d',
             s: searchTerm
+        },
+        proxy: {
+            protocol: 'https'
         }
     });
     console.log(response.data);
@@ -75,6 +78,9 @@ const onMovieSelect = async(movie) => {
         params: {
             apikey: '8c682b5d',
             t: movie
+        },
+        proxy: {
+            protocol: 'https'
         }
     });
     if (response.data.Error) {
