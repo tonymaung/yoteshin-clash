@@ -76,8 +76,8 @@ const runComparison = () => {
     const lefthand = document.querySelector('#left-summary').querySelectorAll('.notification');
     const righthand = document.querySelector('#right-summary').querySelectorAll('.notification');
     lefthand.forEach((leftStat, index) => {
-        let lefthandStat = leftStat.dataset.value;
-        let righthandStat = righthand[index].dataset.value;
+        let lefthandStat = isNaN(leftStat.dataset.value) ? 0 : parseFloat(leftStat.dataset.value);
+        let righthandStat = isNaN(righthand[index].dataset.value) ? 0 : parseFloat(righthand[index].dataset.value); //parseInt(righthand[index].dataset.value);
         if (righthandStat > lefthandStat) {
             leftStat.classList.remove("is-primary");
             leftStat.classList.remove("is-link");
@@ -109,26 +109,49 @@ const runComparison = () => {
     })
 }
 const renderMovie = (movie) => {
-        const dollars = parseInt(movie.BoxOffice.replace(/\$/g, "").replace(/,/g, ""));
-        const metascore = parseInt(movie.MetaScore);
-        const imdbRating = parseFloat(movie.imdbRating);
-        const imdbVotes = parseInt(movie.imdbVotes.replace(/,/g, ''));
-        let ratings1, ratings2;
-        if (movie.Ratings.length > 1) {
-            ratings1 = parseFloat(movie.Ratings[0].Value);
+        let awards, dollars, metascore, imdbRating, imdbVotes, ratings1, ratings2;
+        if (movie.Awards) {
+            awards = movie.Awards.split(" ").reduce((prev, word) => {
+                const value = parseInt(word)
+                if (isNaN(value)) {
+                    return prev;
+                } else {
+                    return prev + value;
+                }
+            }, 0);
+        }
+        if (movie.BoxOffice) {
+            dollars = parseInt(movie.BoxOffice.replace(/\$/g, "").replace(/,/g, ""));
+        } else {
+            dollars = "-"
+        }
+        if (movie.MetaScore) {
+            metascore = parseInt(movie.MetaScore);
+        } else {
+            metascore = "-"
+        }
+        if (movie.imdbRating) {
+            imdbRating = parseFloat(movie.imdbRating);
+        } else {
+            imdbRating = "-"
+        }
+        if (movie.imdbVotes) {
+            imdbVotes = parseInt(movie.imdbVotes.replace(/,/g, ''));
+        } else {
+            imdbVotes = "-"
+        }
+        if (movie.Ratings.length == 0) {
+            ratings1 = "-";
+            ratings2 = "-";
+        } else if (movie.Ratings.length > 1) {
+            ratings1 = parseFloat(movie.Ratings[0].Value.substring(0, 3));
             ratings2 = parseInt(movie.Ratings[1].Value.replace(/%/g, ''));
         } else if (movie.Ratings.length > 0) {
             ratings1 = parseFloat(movie.Ratings[0].Value);
+            ratings2 = "-"
         };
-        const awards = movie.Awards.split(" ").reduce((prev, word) => {
-            const value = parseInt(word)
-            if (isNaN(value)) {
-                return prev;
-            } else {
-                return prev + value;
-            }
-        }, 0);
-        console.log(imdbVotes)
+
+        console.log(awards, imdbVotes, ratings1)
         return `
         <div class="card">
         <article class="media">
@@ -150,7 +173,7 @@ const renderMovie = (movie) => {
     </article>
         </div>
         <article data-value=${awards} class="notification is-primary">
-            <p class="title">${movie.Awards}</p>
+            <p class="title">${movie.Awards === undefined ? "-" : movie.Awards}</p>
             <p class="subtitle">Awards</p>
         </article>
         <article data-value=${dollars} class="notification is-primary">
