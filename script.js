@@ -1,3 +1,176 @@
+const autocompleteConfig = {
+    label: "Search for a Movie or TV series with OMdb Api",
+    renderOption: (movie) => {
+        const imgSrc = movie.Poster === 'N/A' ? '' : movie.Poster;
+        return `
+        <img src="${imgSrc}" />
+        ${movie.Title}(${movie.Year})
+      `
+    },
+
+    inputValue: (movie) => {
+        return movie.Title + ` (${movie.Year})`
+    },
+    fetchData: async(searchTerm) => {
+        const response = await axios.get("https://www.omdbapi.com/", {
+            params: {
+                apikey: '8c682b5d',
+                s: searchTerm
+            }
+            //,proxy: {protocol: 'https'}
+        });
+        console.log(response.data);
+        if (response.data.Error) {
+            return [];
+        }
+
+        return response.data.Search;
+    }
+};
+createAutocomplete({
+    ...autocompleteConfig,
+    root: document.querySelector(".left-autocomplete"),
+    onOptionSelect: (movie) => {
+        document.querySelector(".tutorial").classList.add("is-hidden");
+        onMovieSelect(movie, document.querySelector("#left-summary"), 'left');
+    }
+
+});
+createAutocomplete({
+    ...autocompleteConfig,
+    root: document.querySelector(".right-autocomplete"),
+    onOptionSelect: (movie) => {
+        document.querySelector(".tutorial").classList.add("is-hidden");
+        onMovieSelect(movie, document.querySelector("#right-summary"), 'right');
+    }
+
+});
+let rightMovie;
+let leftMovie;
+const onMovieSelect = async(movie, selector, side) => {
+        const response = await axios.get("https://www.omdbapi.com/", {
+            params: {
+                apikey: '8c682b5d',
+                t: movie.Title
+            }
+            //,proxy: {protocol: 'https'}
+        });
+        if (response.data.Error) {
+            return [];
+        }
+        console.log(response.data);
+        selector.innerHTML = renderMovie(response.data)
+        if (side === "left") {
+            leftMovie = response.data
+        } else {
+            rightMovie = response.data
+        }
+        if (leftMovie && rightMovie) {
+            runComparison()
+        }
+
+    }
+    //helper function to compare
+const runComparison = () => {
+    console.log("Start Comparing")
+    const lefthand = document.querySelector('#left-summary').querySelectorAll('.notification');
+    const righthand = document.querySelector('#right-summary').querySelectorAll('.notification');
+    lefthand.forEach((leftStat, index) => {
+        let lefthandStat = leftStat.dataset.value;
+        let righthandStat = righthand[index].dataset.value;
+        if (righthandStat > lefthandStat) {
+            leftStat.classList.remove("is-primary");
+            leftStat.classList.add("is-danger");
+            righthand[index].classList.remove("is-primary");
+            righthand[index].classList.add("is-success");
+        } else if (righthandStat == lefthandStat) {
+            leftStat.classList.remove("is-primary");
+            leftStat.classList.add("is-link");
+            righthand[index].classList.remove("is-primary");
+            righthand[index].classList.add("is-link");
+        } else {
+            righthand[index].classList.remove("is-primary");
+            righthand[index].classList.add("is-danger");
+            leftStat.classList.remove("is-primary");
+            leftStat.classList.add("is-success");
+        }
+    })
+}
+const renderMovie = (movie) => {
+        const dollars = parseInt(movie.BoxOffice.replace(/\$/g, "").replace(/,/g, ""));
+        const metascore = parseInt(movie.MetaScore);
+        const imdbRating = parseFloat(movie.imdbRating);
+        const imdbVotes = parseInt(movie.imdbVotes.replace(/,/g, ''));
+        let ratings1, ratings2;
+        if (movie.Ratings.length > 1) {
+            ratings1 = parseFloat(movie.Ratings[0].Value);
+            ratings2 = parseInt(movie.Ratings[1].Value.replace(/%/g, ''));
+        } else if (movie.Ratings.length > 0) {
+            ratings1 = parseFloat(movie.Ratings[0].Value);
+        };
+        const awards = movie.Awards.split(" ").reduce((prev, word) => {
+            const value = parseInt(word)
+            if (isNaN(value)) {
+                return prev;
+            } else {
+                return prev + value;
+            }
+        }, 0);
+        console.log(awards, ratings1, ratings2)
+        return `
+        <div class="card">
+        <article class="media">
+        <figure class="media-left is-centered">
+            <p class="image">
+                <img src="${movie.Poster}"/>
+            </p>
+        </figure>
+        <div class="media-content">
+            <div class="content">
+                <h2>${movie.Title}</h2>
+                <h6>Genre - ${movie.Genre}</h6>
+                <h6>Released - ${movie.Released}, Duration - ${movie.Runtime}</h6>
+                <p>
+                    ${movie.Plot}
+                </p>
+            </div>
+        </div>
+    </article>
+        </div>
+        <article data-value=${awards} class="notification is-primary">
+            <p class="title">${movie.Awards}</p>
+            <p class="subtitle">Awards</p>
+        </article>
+        <article data-value=${dollars} class="notification is-primary">
+            <p class="title">${movie.BoxOffice === undefined ? "-" : movie.BoxOffice}</p>
+            <p class="subtitle">Box Office</p>
+        </article>
+        <article data-value=${metascore}  class="notification is-primary">
+            <p class="title">${movie.MetaScore=== undefined ? "-" : movie.MetaScore}</p>
+            <p class="subtitle">Metascore</p>
+        </article>
+        <article data-value=${imdbRating} class="notification is-primary">
+            <p class="title">${movie.imdbRating=== undefined ? "-" : movie.imdbRating}</p>
+            <p class="subtitle">IMDB Rating</p>
+        </article>
+        <article data-value=${imdbVotes} class="notification is-primary">
+            <p class="title">${movie.imdbVotes=== undefined ? "?" : movie.imdbVotes}</p>
+            <p class="subtitle">IMDB Votes</p>
+        </article>
+        ${(movie.Ratings.length) ? `<article data-value=${ratings1} class="notification is-primary">
+        <p class="title">${movie.Ratings[0].Value}</p>
+        <p class="subtitle">Rating Source - ${movie.Ratings[0].Source}</p>
+    </article>` : ""
+        }
+        ${(movie.Ratings.length>1) ? `<article data-value=${ratings2} class="notification is-primary">
+        <p class="title">${movie.Ratings[1].Value}</p>
+        <p class="subtitle">Rating Source - ${movie.Ratings[1].Source}</p>
+    </article>` : ""
+        }
+    `
+}
+
+/* Sphagetti Code
 const root = document.querySelector(".autocomplete");
 root.innerHTML = `
     <label><b>Search for a Movie or TV series with OMdb Api</b></label>
@@ -18,22 +191,7 @@ root.innerHTML = `
 const dropdown = document.querySelector(".dropdown")
 const resultsWrapper = document.querySelector(".results")
 
-const fetchData = async(searchTerm) => {
-    const response = await axios.get("https://www.omdbapi.com/", {
-        params: {
-            apikey: '8c682b5d',
-            s: searchTerm
-        }
-        //,proxy: {protocol: 'https'}
-    });
-    console.log(response.data);
-    if (response.data.Error) {
-        return [];
-    }
 
-    return response.data.Search;
-
-}
 
 const input = document.querySelector('input');
 
@@ -70,72 +228,5 @@ document.addEventListener('click', event => {
         dropdown.classList.remove('is-active');
     }
 });
-const summary = document.querySelector("#summary");
-const onMovieSelect = async(movie) => {
-    const response = await axios.get("https://www.omdbapi.com/", {
-        params: {
-            apikey: '8c682b5d',
-            t: movie
-        }
-        //,proxy: {protocol: 'https'}
-    });
-    if (response.data.Error) {
-        return [];
-    }
-    console.log(response.data);
-    summary.innerHTML = renderMovie(response.data)
-}
 
-const renderMovie = (movie) => {
-        return `
-        <article class="media">
-            <figure class="media-left is-centered">
-                <p class="image">
-                    <img src="${movie.Poster}"/>
-                </p>
-                <p class="subtitle">Year: ${movie.Year}</p>
-            </figure>
-            <div class="media-content">
-                <div class="content">
-                    <h1>${movie.Title}</h1>
-                    <h6>Genre - ${movie.Genre}</h6>
-                    <h6>Released - ${movie.Released}</h6>
-                    <h6>Duration - ${movie.Runtime}</h6>
-                    <p>
-                        ${movie.Plot}
-                    </p>
-                </div>
-            </div>
-        </article>
-        <article class="notification is-primary">
-            <p class="title">${movie.Awards}</p>
-            <p class="subtitle">Awards</p>
-        </article>
-        <article class="notification is-primary">
-            <p class="title">${movie.BoxOffice === undefined ? "-" : movie.BoxOffice}</p>
-            <p class="subtitle">Box Office</p>
-        </article>
-        <article class="notification is-primary">
-            <p class="title">${movie.MetaScore=== undefined ? "-" : movie.MetaScore}</p>
-            <p class="subtitle">Metascore</p>
-        </article>
-        <article class="notification is-primary">
-            <p class="title">${movie.imdbRating=== undefined ? "-" : movie.imdbRating}</p>
-            <p class="subtitle">IMDB Rating</p>
-        </article>
-        <article class="notification is-primary">
-            <p class="title">${movie.imdbVotes=== undefined ? "?" : movie.imdbVotes}</p>
-            <p class="subtitle">IMDB Votes</p>
-        </article>
-        ${(movie.Ratings.length) ? `<article class="notification is-primary">
-        <p class="title">${movie.Ratings[0].Value}</p>
-        <p class="subtitle">Rating Source - ${movie.Ratings[0].Source}</p>
-    </article>` : ""
-        }
-        ${(movie.Ratings.length>1) ? `<article class="notification is-primary">
-        <p class="title">${movie.Ratings[1].Value}</p>
-        <p class="subtitle">Rating Source - ${movie.Ratings[1].Source}</p>
-    </article>` : ""
-        }
-    `
-}
+*/
