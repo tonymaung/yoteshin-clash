@@ -19,14 +19,12 @@ const dropdown = document.querySelector(".dropdown")
 const resultsWrapper = document.querySelector(".results")
 
 const fetchData = async(searchTerm) => {
-    const response = await axios.get("http://www.omdbapi.com/", {
+    const response = await axios.get("https://www.omdbapi.com/", {
         params: {
             apikey: '8c682b5d',
             s: searchTerm
-        },
-        proxy: {
-            protocol: 'https'
         }
+        //,proxy: {protocol: 'https'}
     });
     console.log(response.data);
     if (response.data.Error) {
@@ -74,14 +72,12 @@ document.addEventListener('click', event => {
 });
 const summary = document.querySelector("#summary");
 const onMovieSelect = async(movie) => {
-    const response = await axios.get("http://www.omdbapi.com/", {
+    const response = await axios.get("https://www.omdbapi.com/", {
         params: {
             apikey: '8c682b5d',
             t: movie
-        },
-        proxy: {
-            protocol: 'https'
         }
+        //,proxy: {protocol: 'https'}
     });
     if (response.data.Error) {
         return [];
